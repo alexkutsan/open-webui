@@ -1,17 +1,17 @@
 name: Create and publish Docker images with specific build args
-
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - dev
-    tags:
-      - v*
+# on:
+#   workflow_dispatch:
+#   push:
+#     branches:
+#       - main
+#       - dev
+#     tags:
+#       - v*
 
 env:
   REGISTRY: ghcr.io
-
 jobs:
   build-main-image:
     runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
@@ -24,7 +24,6 @@ jobs:
         platform:
           - linux/amd64
           - linux/arm64
-
     steps:
       # GitHub Packages requires the entire repository name to be in lowercase
       # although the repository owner has a lowercase username, this prevents some people from running actions after forking
@@ -34,28 +33,22 @@ jobs:
           echo "FULL_IMAGE_NAME=ghcr.io/${IMAGE_NAME,,}" >>${GITHUB_ENV}
         env:
           IMAGE_NAME: '${{ github.repository }}'
-
       - name: Prepare
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract metadata for Docker images (default latest tag)
         id: meta
         uses: docker/metadata-action@v5
@@ -69,7 +62,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
           flavor: |
             latest=${{ github.ref == 'refs/heads/main' }}
-
       - name: Extract metadata for Docker cache
         id: cache-meta
         uses: docker/metadata-action@v5
@@ -81,7 +73,6 @@ jobs:
           flavor: |
             prefix=cache-${{ matrix.platform }}-
             latest=false
-
       - name: Build Docker image (latest)
         uses: docker/build-push-action@v5
         id: build
@@ -95,13 +86,11 @@ jobs:
           cache-to: type=registry,ref=${{ steps.cache-meta.outputs.tags }},mode=max
           build-args: |
             BUILD_HASH=${{ github.sha }}
-
       - name: Export digest
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
-
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
@@ -109,7 +98,6 @@ jobs:
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
-
   build-cuda-image:
     runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     permissions:
@@ -121,7 +109,6 @@ jobs:
         platform:
           - linux/amd64
           - linux/arm64
-
     steps:
       # GitHub Packages requires the entire repository name to be in lowercase
       # although the repository owner has a lowercase username, this prevents some people from running actions after forking
@@ -131,28 +118,22 @@ jobs:
           echo "FULL_IMAGE_NAME=ghcr.io/${IMAGE_NAME,,}" >>${GITHUB_ENV}
         env:
           IMAGE_NAME: '${{ github.repository }}'
-
       - name: Prepare
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract metadata for Docker images (cuda tag)
         id: meta
         uses: docker/metadata-action@v5
@@ -168,7 +149,6 @@ jobs:
           flavor: |
             latest=${{ github.ref == 'refs/heads/main' }}
             suffix=-cuda,onlatest=true
-
       - name: Extract metadata for Docker cache
         id: cache-meta
         uses: docker/metadata-action@v5
@@ -180,7 +160,6 @@ jobs:
           flavor: |
             prefix=cache-cuda-${{ matrix.platform }}-
             latest=false
-
       - name: Build Docker image (cuda)
         uses: docker/build-push-action@v5
         id: build
@@ -195,13 +174,11 @@ jobs:
           build-args: |
             BUILD_HASH=${{ github.sha }}
             USE_CUDA=true
-
       - name: Export digest
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
-
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
@@ -209,7 +186,6 @@ jobs:
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
-
   build-ollama-image:
     runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     permissions:
@@ -221,7 +197,6 @@ jobs:
         platform:
           - linux/amd64
           - linux/arm64
-
     steps:
       # GitHub Packages requires the entire repository name to be in lowercase
       # although the repository owner has a lowercase username, this prevents some people from running actions after forking
@@ -231,28 +206,22 @@ jobs:
           echo "FULL_IMAGE_NAME=ghcr.io/${IMAGE_NAME,,}" >>${GITHUB_ENV}
         env:
           IMAGE_NAME: '${{ github.repository }}'
-
       - name: Prepare
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract metadata for Docker images (ollama tag)
         id: meta
         uses: docker/metadata-action@v5
@@ -268,7 +237,6 @@ jobs:
           flavor: |
             latest=${{ github.ref == 'refs/heads/main' }}
             suffix=-ollama,onlatest=true
-
       - name: Extract metadata for Docker cache
         id: cache-meta
         uses: docker/metadata-action@v5
@@ -280,7 +248,6 @@ jobs:
           flavor: |
             prefix=cache-ollama-${{ matrix.platform }}-
             latest=false
-
       - name: Build Docker image (ollama)
         uses: docker/build-push-action@v5
         id: build
@@ -295,13 +262,11 @@ jobs:
           build-args: |
             BUILD_HASH=${{ github.sha }}
             USE_OLLAMA=true
-
       - name: Export digest
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
-
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
@@ -309,7 +274,6 @@ jobs:
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
-
   merge-main-images:
     runs-on: ubuntu-latest
     needs: [build-main-image]
@@ -322,24 +286,20 @@ jobs:
           echo "FULL_IMAGE_NAME=ghcr.io/${IMAGE_NAME,,}" >>${GITHUB_ENV}
         env:
           IMAGE_NAME: '${{ github.repository }}'
-
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
           pattern: digests-main-*
           path: /tmp/digests
           merge-multiple: true
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract metadata for Docker images (default latest tag)
         id: meta
         uses: docker/metadata-action@v5
@@ -353,17 +313,14 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
           flavor: |
             latest=${{ github.ref == 'refs/heads/main' }}
-
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.FULL_IMAGE_NAME }}@sha256:%s ' *)
-
       - name: Inspect image
         run: |
           docker buildx imagetools inspect ${{ env.FULL_IMAGE_NAME }}:${{ steps.meta.outputs.version }}
-
   merge-cuda-images:
     runs-on: ubuntu-latest
     needs: [build-cuda-image]
@@ -376,24 +333,20 @@ jobs:
           echo "FULL_IMAGE_NAME=ghcr.io/${IMAGE_NAME,,}" >>${GITHUB_ENV}
         env:
           IMAGE_NAME: '${{ github.repository }}'
-
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
           pattern: digests-cuda-*
           path: /tmp/digests
           merge-multiple: true
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract metadata for Docker images (default latest tag)
         id: meta
         uses: docker/metadata-action@v5
@@ -409,17 +362,14 @@ jobs:
           flavor: |
             latest=${{ github.ref == 'refs/heads/main' }}
             suffix=-cuda,onlatest=true
-
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.FULL_IMAGE_NAME }}@sha256:%s ' *)
-
       - name: Inspect image
         run: |
           docker buildx imagetools inspect ${{ env.FULL_IMAGE_NAME }}:${{ steps.meta.outputs.version }}
-
   merge-ollama-images:
     runs-on: ubuntu-latest
     needs: [build-ollama-image]
@@ -432,24 +382,20 @@ jobs:
           echo "FULL_IMAGE_NAME=ghcr.io/${IMAGE_NAME,,}" >>${GITHUB_ENV}
         env:
           IMAGE_NAME: '${{ github.repository }}'
-
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
           pattern: digests-ollama-*
           path: /tmp/digests
           merge-multiple: true
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract metadata for Docker images (default ollama tag)
         id: meta
         uses: docker/metadata-action@v5
@@ -465,13 +411,11 @@ jobs:
           flavor: |
             latest=${{ github.ref == 'refs/heads/main' }}
             suffix=-ollama,onlatest=true
-
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.FULL_IMAGE_NAME }}@sha256:%s ' *)
-
       - name: Inspect image
         run: |
           docker buildx imagetools inspect ${{ env.FULL_IMAGE_NAME }}:${{ steps.meta.outputs.version }}
